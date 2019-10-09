@@ -32,13 +32,25 @@ var PINS_AMOUNT = 8;
 // card constants
 var mapFilter = document.querySelector('.map__filters-container');
 var cardTemplate = document.querySelector('#card').content.querySelector('.map__card');
-// card constants
 var TypeOfApartment = {
   PALACE: 'Дворец',
   HOUSE: 'Дом',
   FLAT: 'Квартира',
   BUNGALO: 'Бунгало'
 };
+// card constants
+var screenState = false;
+var activeAddressCounter = 0;
+var housingFilters = map.querySelectorAll('.map__filter');
+var housingFeatures = map.querySelectorAll('input[name=features]');
+var mapPinMain = map.querySelector('.map__pin--main');
+var notice = document.querySelector('.notice');
+var adForm = notice.querySelector('.ad-form');
+var adFormAvatarBlock = adForm.querySelector('.ad-form-header');
+var adFormElements = adForm.querySelectorAll('.ad-form__element');
+var adFormAddress = adForm.querySelector('input[name=address]');
+var roomsNumber = notice.querySelector('#room_number');
+var guestsNumber = notice.querySelector('#capacity');
 
 var getRandomElement = function (arr) {
   return arr[Math.round(Math.random() * (arr.length - 1))];
@@ -213,6 +225,100 @@ var addCard = function (advertsCollection) {
   return map.insertBefore(renderCard(advertsCollection[0]), mapFilter);
 };
 
+// Отключаем фильтры и поля форм
+var disableElements = function (elements) {
+  elements.forEach(function (element) {
+    element.disabled = true;
+    element.style.cursor = 'default';
+  });
+};
+
+disableElements(housingFilters);
+disableElements(housingFeatures);
+adFormAvatarBlock.disabled = true;
+adFormAvatarBlock.style.cursor = 'default';
+disableElements(adFormElements);
+// Отключаем фильтры и поля форм
+
+// Включаем фильтры и поля форм
+var enableElements = function (elements) {
+  elements.forEach(function (element) {
+    element.disabled = false;
+    element.style.cursor = 'pointer';
+  });
+};
+
+// Включаем фильтры и поля форм
+
+// Активируем главный экран
+var activeScreen = function () {
+  if (!screenState) {
+    screenState = true;
+    map.classList.remove('map--faded');
+    adForm.classList.remove('ad-form--disabled');
+    enableElements(housingFilters);
+    enableElements(housingFeatures);
+    adFormAvatarBlock.disabled = false;
+    adFormAvatarBlock.style.cursor = 'pointer';
+    enableElements(adFormElements);
+  }
+};
+
+mapPinMain.addEventListener('mousedown', function () {
+  activeScreen();
+  adFormAddress.value = writeAddress(screenState);
+});
+
+mapPinMain.addEventListener('keydown', function () {
+  activeScreen();
+  adFormAddress.value = writeAddress(screenState);
+});
+// Активируем главный экран
+
+// Высчитываем координаты для адреса
+var writeAddress = function (state) {
+  var address = 0;
+  if (activeAddressCounter === 0) {
+    if (state) {
+      address = Math.round(mapPinMain.offsetLeft + mapPinMain.clientWidth) + ', ' + Math.round(mapPinMain.offsetTop + mapPinMain.clientHeight);
+      activeAddressCounter += 1;
+      return address;
+    }
+
+    address = Math.round(mapPinMain.offsetLeft + (mapPinMain.clientWidth / 2)) + ', ' + Math.round(mapPinMain.offsetTop + (mapPinMain.clientHeight / 2));
+    return address;
+  }
+  return address;
+};
+// Высчитываем координаты для адреса
+
+// Адрес при неативном экране
+adFormAddress.value = writeAddress(screenState);
+// Адрес при неативном экране
+
+// Сравниваем значения полей
+var matchRoomsAndGuests = function () {
+  var rooms = +roomsNumber.value;
+  var guests = +guestsNumber.value;
+  if (rooms < guests) {
+    return guestsNumber.setCustomValidity('Ошибка: Количество гостей может быть либо меньше количества комнат, либо равным им!');
+  } else {
+    return guestsNumber.setCustomValidity('');
+  }
+};
+
+matchRoomsAndGuests();
+
+roomsNumber.addEventListener('change', function () {
+  matchRoomsAndGuests();
+});
+
+guestsNumber.addEventListener('change', function () {
+  matchRoomsAndGuests();
+});
+// Сравниваем значения полей
+
+// Включены чтобы travis не ругался
 addPins(pins);
 addCard(pins);
-map.classList.remove('map--faded');
+// Включены чтобы travis не ругался
