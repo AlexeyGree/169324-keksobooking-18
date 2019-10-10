@@ -39,8 +39,7 @@ var TypeOfApartment = {
   BUNGALO: 'Бунгало'
 };
 // card constants
-var screenState = false;
-var activeAddressCounter = 0;
+var isPageActive = false;
 var housingFilters = map.querySelectorAll('.map__filter');
 var housingFeatures = map.querySelectorAll('input[name=features]');
 var mapPinMain = map.querySelector('.map__pin--main');
@@ -233,11 +232,15 @@ var disableElements = function (elements) {
   });
 };
 
-disableElements(housingFilters);
-disableElements(housingFeatures);
-adFormAvatarBlock.disabled = true;
-adFormAvatarBlock.style.cursor = 'default';
-disableElements(adFormElements);
+var disableForms = function () {
+  disableElements(housingFilters);
+  disableElements(housingFeatures);
+  adFormAvatarBlock.disabled = true;
+  adFormAvatarBlock.style.cursor = 'default';
+  disableElements(adFormElements);
+};
+
+disableForms();
 // Отключаем фильтры и поля форм
 
 // Включаем фильтры и поля форм
@@ -252,8 +255,8 @@ var enableElements = function (elements) {
 
 // Активируем главный экран
 var activeScreen = function () {
-  if (!screenState) {
-    screenState = true;
+  if (!isPageActive) {
+    isPageActive = true;
     map.classList.remove('map--faded');
     adForm.classList.remove('ad-form--disabled');
     enableElements(housingFilters);
@@ -263,44 +266,42 @@ var activeScreen = function () {
     enableElements(adFormElements);
   }
 };
-
-mapPinMain.addEventListener('mousedown', function () {
-  activeScreen();
-  adFormAddress.value = writeAddress(screenState);
-});
-
-mapPinMain.addEventListener('keydown', function () {
-  activeScreen();
-  adFormAddress.value = writeAddress(screenState);
-});
 // Активируем главный экран
 
 // Высчитываем координаты для адреса
 var writeAddress = function (state) {
   var address = 0;
-  if (activeAddressCounter === 0) {
-    if (state) {
-      address = Math.round(mapPinMain.offsetLeft + mapPinMain.clientWidth) + ', ' + Math.round(mapPinMain.offsetTop + mapPinMain.clientHeight);
-      activeAddressCounter += 1;
-      return address;
-    }
-
+  if (state) {
+    address = Math.round(mapPinMain.offsetLeft + mapPinMain.clientWidth) + ', ' + Math.round(mapPinMain.offsetTop + mapPinMain.clientHeight);
+    return address;
+  } else {
     address = Math.round(mapPinMain.offsetLeft + (mapPinMain.clientWidth / 2)) + ', ' + Math.round(mapPinMain.offsetTop + (mapPinMain.clientHeight / 2));
     return address;
   }
-  return address;
 };
 // Высчитываем координаты для адреса
 
 // Адрес при неативном экране
-adFormAddress.value = writeAddress(screenState);
+adFormAddress.value = writeAddress(isPageActive);
 // Адрес при неативном экране
+
+// Активируем главный экран
+mapPinMain.addEventListener('mousedown', function () {
+  activeScreen();
+  adFormAddress.value = writeAddress(isPageActive);
+});
+
+mapPinMain.addEventListener('keydown', function () {
+  activeScreen();
+  adFormAddress.value = writeAddress(isPageActive);
+});
+// Активируем главный экран
 
 // Сравниваем значения полей
 var matchRoomsAndGuests = function () {
   var rooms = +roomsNumber.value;
   var guests = +guestsNumber.value;
-  if (rooms < guests) {
+  if (rooms < guests || rooms === 100 && guests !== 0) {
     return guestsNumber.setCustomValidity('Ошибка: Количество гостей может быть либо меньше количества комнат, либо равным им!');
   } else {
     return guestsNumber.setCustomValidity('');
@@ -319,6 +320,8 @@ guestsNumber.addEventListener('change', function () {
 // Сравниваем значения полей
 
 // Включены чтобы travis не ругался
-addPins(pins);
-addCard(pins);
+if (isPageActive) {
+  addPins(pins);
+  addCard(pins);
+}
 // Включены чтобы travis не ругался
