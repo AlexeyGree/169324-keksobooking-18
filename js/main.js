@@ -50,6 +50,8 @@ var adFormElements = adForm.querySelectorAll('.ad-form__element');
 var adFormAddress = adForm.querySelector('input[name=address]');
 var roomsNumber = notice.querySelector('#room_number');
 var guestsNumber = notice.querySelector('#capacity');
+var MAX_ROOM = 100;
+var WITHOUT_GUESTS = 0;
 
 var getRandomElement = function (arr) {
   return arr[Math.round(Math.random() * (arr.length - 1))];
@@ -270,14 +272,11 @@ var activeScreen = function () {
 
 // Высчитываем координаты для адреса
 var writeAddress = function (state) {
-  var address = 0;
   if (state) {
-    address = Math.round(mapPinMain.offsetLeft + mapPinMain.clientWidth) + ', ' + Math.round(mapPinMain.offsetTop + mapPinMain.clientHeight);
-    return address;
-  } else {
-    address = Math.round(mapPinMain.offsetLeft + (mapPinMain.clientWidth / 2)) + ', ' + Math.round(mapPinMain.offsetTop + (mapPinMain.clientHeight / 2));
-    return address;
+    return Math.round(mapPinMain.offsetLeft + (mapPinMain.clientWidth / 2)) + ', ' + Math.round(mapPinMain.offsetTop + mapPinMain.clientHeight);
   }
+
+  return Math.round(mapPinMain.offsetLeft + (mapPinMain.clientWidth / 2)) + ', ' + Math.round(mapPinMain.offsetTop + (mapPinMain.clientHeight / 2));
 };
 // Высчитываем координаты для адреса
 
@@ -301,8 +300,8 @@ mapPinMain.addEventListener('keydown', function () {
 var matchRoomsAndGuests = function () {
   var rooms = +roomsNumber.value;
   var guests = +guestsNumber.value;
-  if (rooms < guests || rooms === 100 && guests !== 0) {
-    return guestsNumber.setCustomValidity('Ошибка: Количество гостей может быть либо меньше количества комнат, либо равным им!');
+  if (rooms < guests || rooms === MAX_ROOM && guests !== WITHOUT_GUESTS) {
+    return guestsNumber.setCustomValidity('Ошибка: Количество гостей не может быть больше количества комнат!');
   } else {
     return guestsNumber.setCustomValidity('');
   }
