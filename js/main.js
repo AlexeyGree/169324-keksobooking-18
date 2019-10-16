@@ -38,6 +38,12 @@ var TypeOfApartment = {
   FLAT: 'Квартира',
   BUNGALO: 'Бунгало'
 };
+var TypeOfApartmentPrice = {
+  bungalo: 0,
+  flat: 1000,
+  house: 5000,
+  palace: 10000
+};
 // card constants
 var isPageActive = false;
 var housingFilters = map.querySelectorAll('.map__filter');
@@ -52,6 +58,16 @@ var roomsNumber = notice.querySelector('#room_number');
 var guestsNumber = notice.querySelector('#capacity');
 var MAX_ROOM = 100;
 var WITHOUT_GUESTS = 0;
+var buttons;
+var cards;
+var isCardOpen = false;
+// var KEY_ENTER = 13;
+var KEY_ESC = 27;
+var adFormTitle = adForm.querySelector('input[name=title]');
+var adFormPrice = adForm.querySelector('input[name=price]');
+var adFormType = adForm.querySelector('select[name=type]');
+var adFormTimeIn = adForm.querySelector('select[name=timein]');
+var adFormTimeOut = adForm.querySelector('select[name=timeout]');
 
 var getRandomElement = function (arr) {
   return arr[Math.round(Math.random() * (arr.length - 1))];
@@ -219,11 +235,15 @@ var renderCard = function (advert) {
 
   currentCard.querySelector('.popup__avatar').src = advert.author.avatar;
 
+  currentCard.classList.add('hidden');
+
   return currentCard;
 };
 
 var addCard = function (advertsCollection) {
-  return map.insertBefore(renderCard(advertsCollection[0]), mapFilter);
+  advertsCollection.forEach(function (card) {
+    map.insertBefore(renderCard(card), mapFilter);
+  });
 };
 
 // Отключаем фильтры и поля форм
@@ -255,6 +275,41 @@ var enableElements = function (elements) {
 
 // Включаем фильтры и поля форм
 
+// Открытие и закрытие карт для пинов
+var openCard = function (renderedPins) {
+  renderedPins.forEach(function (pin, index) {
+    // console.log(cards[index]);
+    pin.addEventListener('click', function () {
+      if (cards[index].classList.contains('hidden') && !isCardOpen) {
+        cards[index].classList.remove('hidden');
+        cards[index].style.zIndex = 3;
+        isCardOpen = true;
+      }
+    });
+  });
+};
+
+var closeCard = function (redneredCards) {
+  redneredCards.forEach(function (card) {
+    var closeButton = card.querySelector('.popup__close');
+    closeButton.addEventListener('click', function () {
+      if (isCardOpen && !card.classList.contains('hidden')) {
+        card.classList.add('hidden');
+        card.style.zIndex = 2;
+        isCardOpen = false;
+      }
+    });
+    document.addEventListener('keydown', function (evt) {
+      if (isCardOpen && !card.classList.contains('hidden') && evt.keyCode === KEY_ESC) {
+        card.classList.add('hidden');
+        card.style.zIndex = 2;
+        isCardOpen = false;
+      }
+    });
+  });
+};
+// Открытие и закрытие карт для пинов
+
 // Активируем главный экран
 var activeScreen = function () {
   if (!isPageActive) {
@@ -266,6 +321,13 @@ var activeScreen = function () {
     adFormAvatarBlock.disabled = false;
     adFormAvatarBlock.style.cursor = 'pointer';
     enableElements(adFormElements);
+
+    addPins(pins);
+    addCard(pins);
+    buttons = map.querySelectorAll('button[class=map__pin]');
+    cards = map.querySelectorAll('.map__card');
+    openCard(buttons);
+    closeCard(cards);
   }
 };
 // Активируем главный экран
@@ -318,9 +380,44 @@ guestsNumber.addEventListener('change', function () {
 });
 // Сравниваем значения полей
 
-// Включены чтобы travis не ругался
-if (isPageActive) {
-  addPins(pins);
-  addCard(pins);
-}
-// Включены чтобы travis не ругался
+// Диапазон символов в поле "Заголовок"
+adFormTitle.addEventListener('invalid', function () {
+  if (adFormTitle.validity.tooShort) {
+    adFormTitle.setCustomValidity('Минимальное количество символов должно быть не менее 30');
+  } else if (adFormTitle.validity.tooLong) {
+    adFormTitle.setCustomValidity('Максимальное количество символов не должно превышать 100');
+  } else {
+    adFormTitle.setCustomValidity('');
+  }
+});
+// Диапазон символов в поле "Заголовок"
+
+// Максимальная цена
+adFormPrice.addEventListener('change', function () {
+  if (adFormPrice.value > 1000000) {
+    adFormPrice.setCustomValidity('Максимальная сумма не может превышать 1 000 000');
+  }
+});
+// Максимальная цена
+
+// Минимальная цена в зависимости от поля "Тип квартиры"
+adFormType.addEventListener('change', function () {
+  var minPrice = TypeOfApartmentPrice[adFormType.value];
+  // console.log(minPrice);
+  if (adFormPrice.value < minPrice && minPrice !== 0) {
+    adFormPrice.setCustomValidity('Минимальная цена за ночь не должна быть меньше ' + minPrice);
+  } else if (minPrice === 0) {
+    adFormPrice.setCustomValidity('');
+  }
+});
+// Минимальная цена в зависимости от поля "Тип квартиры"
+
+// Связываем поля "Дата въезда и выезда"
+adFormTimeIn.addEventListener('change', function () {
+  adFormTimeOut.value = adFormTimeIn.value;
+});
+
+adFormTimeOut.addEventListener('change', function () {
+  adFormTimeIn.value = adFormTimeOut.value;
+});
+// Связываем поля "Дата въезда и выезда"
