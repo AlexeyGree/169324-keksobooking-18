@@ -58,13 +58,6 @@ var roomsNumber = notice.querySelector('#room_number');
 var guestsNumber = notice.querySelector('#capacity');
 var MAX_ROOM = 100;
 var WITHOUT_GUESTS = 0;
-// var buttons;
-// var buttonIndex = 0;
-
-// !!--------------!! Переменная для проверки !!--------------!!
-// var isCardOpen = false;
-// !!--------------!! Переменная для проверки !!--------------!!
-// var KEY_ENTER = 13;
 var KEY_ESC = 27;
 var adFormTitle = adForm.querySelector('input[name=title]');
 var adFormPrice = adForm.querySelector('input[name=price]');
@@ -160,12 +153,9 @@ var renderPin = function (pin) {
 
   // Добавляем обработчик для пина
   currentPin.addEventListener('click', function () {
-    // !!--------------!! Проверка карта открыта !!--------------!!
-    // if (!isCardOpen) {
-    // !!--------------!! Проверка карта открыта !!--------------!!
+
     removeActiveClass();
-    var card = addCard(pin);
-    showCard(card);
+    addCard(pin);
     currentPin.classList.add('map__pin--active');
     // }
   });
@@ -225,7 +215,6 @@ var getPhotos = function (card, photos) {
 var removeCard = function () {
   var card = map.querySelector('.map__card');
   if (card) {
-    hideCard(card);
     card.remove();
   }
 };
@@ -308,31 +297,19 @@ var removeActiveClass = function () {
   }
 };
 
-var hideCard = function (card) {
-  card.style.zIndex = 2;
-  // isCardOpen = false;
-};
-
-var showCard = function (card) {
-  card.style.zIndex = 3;
-  // isCardOpen = true;
-};
-
 // Добавляем собитие клик и нажатие Esc для текущей карты
 var addCloseEvent = function (card) {
   var closeButton = card.querySelector('.popup__close');
   closeButton.addEventListener('click', function () {
     if (!card.classList.contains('hidden')) {
-      hideCard(card);
-      closeButton.removeEventListener('click', hideCard);
+      closeButton.removeEventListener('click', function () {});
       removeCard();
       removeActiveClass();
     }
   });
   document.addEventListener('keydown', function (evt) {
     if (!card.classList.contains('hidden') && evt.keyCode === KEY_ESC) {
-      hideCard(card);
-      document.removeEventListener('keydown', hideCard);
+      document.removeEventListener('keydown', function () {});
       removeCard();
       removeActiveClass();
     }
@@ -418,25 +395,41 @@ adFormTitle.addEventListener('invalid', function () {
 });
 // Диапазон символов в поле "Заголовок"
 
-// Максимальная цена
-adFormPrice.addEventListener('change', function () {
-  if (adFormPrice.value > 1000000) {
-    adFormPrice.setCustomValidity('Максимальная сумма не может превышать 1 000 000');
-  }
-});
-// Максимальная цена
+// Минимальная цена в зависимости от поля "Тип квартиры" и максимальная цена
+var priceFieldValue = +adFormPrice.value;
+var minPrice = TypeOfApartmentPrice[adFormType.value];
+var MAX_PRICE = 1000000;
 
-// Минимальная цена в зависимости от поля "Тип квартиры"
-adFormType.addEventListener('change', function () {
-  var minPrice = TypeOfApartmentPrice[adFormType.value];
-  // console.log(minPrice);
-  if (adFormPrice.value < minPrice && minPrice !== 0) {
-    adFormPrice.setCustomValidity('Минимальная цена за ночь не должна быть меньше ' + minPrice);
-  } else if (minPrice === 0) {
+var getPriceValues = function () {
+  adFormPrice.addEventListener('input', function () {
+    priceFieldValue = +adFormPrice.value ? +adFormPrice.value : 0;
+  });
+  minPrice = TypeOfApartmentPrice[adFormType.value];
+};
+
+var getPriceIssue = function (price, minPriceValue) {
+  if (price < minPriceValue && minPriceValue !== 0) {
+    adFormPrice.setCustomValidity('Минимальная цена за ночь не должна быть меньше ' + minPriceValue);
+  } else if (minPriceValue === 0) {
+    adFormPrice.setCustomValidity('');
+  } else if (priceFieldValue > MAX_PRICE) {
+    adFormPrice.setCustomValidity('Максимальная сумма не может превышать 1 000 000');
+  } else {
     adFormPrice.setCustomValidity('');
   }
+};
+
+adFormType.addEventListener('change', function () {
+  adFormPrice.placeholder = TypeOfApartmentPrice[adFormType.value];
+  getPriceValues();
+  getPriceIssue(priceFieldValue, minPrice);
 });
-// Минимальная цена в зависимости от поля "Тип квартиры"
+
+adFormPrice.addEventListener('change', function () {
+  getPriceValues();
+  getPriceIssue(priceFieldValue, minPrice);
+});
+// Минимальная цена в зависимости от поля "Тип квартиры" и максимальная цена
 
 // Связываем поля "Дата въезда и выезда"
 adFormTimeIn.addEventListener('change', function () {
